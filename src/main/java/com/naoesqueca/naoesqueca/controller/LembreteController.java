@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 
 @RestController
@@ -30,5 +31,16 @@ public class LembreteController {
     @GetMapping
     public ResponseEntity<List<Lembrete>> listar() {
         return ResponseEntity.ok(lembretes);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Lembrete> buscarPorId(@PathVariable Long id) {
+        Optional<Lembrete> lembreteOpt = buscarLembretePorId(id);
+    }
+
+    if(lembreteOpt.isPresent()) {
+        return ResponseEntity.ok(lembreteOpt.get());
+    } else {
+        return ResponseEntity.notFound().build();
     }
 }
