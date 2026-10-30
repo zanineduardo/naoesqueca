@@ -3,6 +3,7 @@ package com.naoesqueca.naoesqueca.controller;
 import com.naoesqueca.naoesqueca.dto.LembreteRequestDTO;
 import com.naoesqueca.naoesqueca.dto.LembreteResponseDTO;
 import com.naoesqueca.naoesqueca.enums.Status;
+import com.naoesqueca.naoesqueca.exception.ResourceNotFoundException;
 import com.naoesqueca.naoesqueca.model.Lembrete;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -49,57 +50,38 @@ public class LembreteController {
 
     @GetMapping("/{id}")
     public ResponseEntity<LembreteResponseDTO> buscarPorId(@PathVariable Long id) {
-        Optional<Lembrete> lembreteOpt = buscarLembretePorId(id);
-        if (lembreteOpt.isPresent()) {
-            return ResponseEntity.ok(LembreteResponseDTO.fromEntity(lembreteOpt.get()));
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+        Lembrete lembrete = obterLembreteOuLancarExcecao(id);
+        return ResponseEntity.ok(LembreteResponseDTO.fromEntity(lembrete));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<LembreteResponseDTO> atualizar(@PathVariable Long id, @Valid @RequestBody LembreteRequestDTO request) {
-        Optional<Lembrete> lembreteOpt = buscarLembretePorId(id);
+        Lembrete lembreteExistente = obterLembreteOuLancarExcecao(id);
 
-        if (lembreteOpt.isPresent()) {
-            Lembrete lembreteExistente = lembreteOpt.get();
-            lembreteExistente.setTitulo(request.getTitulo());
-            lembreteExistente.setDescricao(request.getDescricao());
-            lembreteExistente.setDataHora(request.getDataHora());
-            lembreteExistente.setPrioridade(request.getPrioridade());
-            lembreteExistente.setAtualizadoEm(LocalDateTime.now());
+        lembreteExistente.setTitulo(request.getTitulo());
+        lembreteExistente.setDescricao(request.getDescricao());
+        lembreteExistente.setDataHora(request.getDataHora());
+        lembreteExistente.setPrioridade(request.getPrioridade());
+        lembreteExistente.setAtualizadoEm(LocalDateTime.now());
 
-            return ResponseEntity.ok(LembreteResponseDTO.fromEntity(lembreteExistente));
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(LembreteResponseDTO.fromEntity(lembreteExistente));
     }
 
     @PatchMapping("/{id}/concluir")
     public ResponseEntity<LembreteResponseDTO> concluir(@PathVariable Long id) {
-        Optional<Lembrete> lembreteOpt = buscarLembretePorId(id);
+        Lembrete lembrete = obterLembreteOuLancarExcecao(id);
 
-        if (lembreteOpt.isPresent()) {
-            Lembrete lembrete = lembreteOpt.get();
-            lembrete.setStatus(Status.CONCLUIDO);
-            lembrete.setAtualizadoEm(LocalDateTime.now());
+        lembrete.setStatus(Status.CONCLUIDO);
+        lembrete.setAtualizadoEm(LocalDateTime.now());
 
-            return ResponseEntity.ok(LembreteResponseDTO.fromEntity(lembrete));
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(LembreteResponseDTO.fromEntity(lembrete));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> excluir(@PathVariable Long id) {
-        Optional<Lembrete> lembreteOpt = buscarLembretePorId(id);
-
-        if (lembreteOpt.isPresent()) {
-            lembretes.remove(lembreteOpt.get());
-            return ResponseEntity.noContent().build();
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+        Lembrete lembrete = obterLembreteOuLancarExcecao(id);
+        lembretes.remove(lembrete);
+        return ResponseEntity.noContent().build();
     }
 
     private Optional<Lembrete> buscarLembretePorId(Long id) {
@@ -109,5 +91,14 @@ public class LembreteController {
             }
         }
         return Optional.empty();
+    }
+
+    private Lembrete obterLembreteOuLancarExcecao(Long id) {
+        for (Lembrete l : lembretes) {
+            if (l.getId().equals(id)) {
+                return l;
+            }
+        }
+        throw new ResourceNotFoundException("Lembrete não encontrado com ID: " + id);
     }
 }
