@@ -2,6 +2,7 @@ package com.naoesqueca.naoesqueca.service;
 
 import com.naoesqueca.naoesqueca.dto.LembreteRequestDTO;
 import com.naoesqueca.naoesqueca.dto.LembreteResponseDTO;
+import com.naoesqueca.naoesqueca.enums.Prioridade;
 import com.naoesqueca.naoesqueca.enums.Status;
 import com.naoesqueca.naoesqueca.exception.ResourceNotFoundException;
 import com.naoesqueca.naoesqueca.model.Lembrete;
@@ -82,5 +83,43 @@ public class LembreteService {
         } else {
             throw new ResourceNotFoundException("Lembrete não encontrado com ID: " + id);
         }
+    }
+
+    public List<LembreteResponseDTO> listarComFiltros(Status status, Prioridade prioridade) {
+        List<Lembrete> resultado;
+        if (status != null && prioridade != null) {
+            resultado = lembreteRepository.findByStatusAndPrioridade(status, prioridade);
+        } else if (status != null) {
+            resultado = lembreteRepository.findByStatus(status);
+        } else if (prioridade != null) {
+            resultado = lembreteRepository.findByPrioridade(prioridade);
+        } else {
+            resultado = lembreteRepository.findAll();
+        }
+
+        List<LembreteResponseDTO> dtos = new ArrayList<>();
+        for (Lembrete l : resultado) {
+            dtos.add(LembreteResponseDTO.fromEntity(l));
+        }
+        return dtos;
+    }
+
+    public List<LembreteResponseDTO> buscarPorPeriodo(LocalDateTime inicio, LocalDateTime fim) {
+        List<Lembrete> lembretes = lembreteRepository.findByDataHoraBetween(inicio, fim);
+        List<LembreteResponseDTO> dtos = new ArrayList<>();
+        for (Lembrete l : lembretes) {
+            dtos.add(LembreteResponseDTO.fromEntity(l));
+        }
+        return dtos;
+    }
+
+    public List<LembreteResponseDTO> listarAtrasados() {
+        List<Lembrete> lembretes = lembreteRepository.findByStatusAndDataHoraBefore(
+                Status.PENDENTE, LocalDateTime.now());
+        List<LembreteResponseDTO> dtos = new ArrayList<>();
+        for (Lembrete l : lembretes) {
+            dtos.add(LembreteResponseDTO.fromEntity(l));
+        }
+        return dtos;
     }
 }
